@@ -1,3 +1,10 @@
+-- 'auto' picks the framework that is running. Qbox goes through its qb-core bridge.
+if Config.framework == 'QBOX' then
+	Config.framework = 'QBCORE'
+elseif Config.framework == 'auto' then
+	Config.framework = GetResourceState('es_extended'):find('start') and 'ESX' or 'QBCORE'
+end
+
 function Framework()
 	if Config.framework == 'ESX' then
 		ESX = exports['es_extended']:getSharedObject()

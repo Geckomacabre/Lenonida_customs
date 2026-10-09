@@ -7,21 +7,27 @@ shared_script '@renzu_shield/init.lua'
 server_scripts {
 	'@mysql-async/lib/MySQL.lua', -- uncomment if ghmatti and oxmysql
 	'config.lua',
+	'config_menu.lua',
+	'shared/customs.lua',
 	'framework/sv_wrapper.lua',
 	'server/server.lua'
 }
 
 client_scripts {
 	'config.lua',
+	'config_menu.lua',
+	'shared/customs.lua',
 	'framework/cl_wrapper.lua',
 	'client/function.lua',
 	'client/client.lua',
 	'client/events.lua',
 	'client/nui_event.lua',
+	'client/menu.lua',
+	'client/nitrous.lua',
 }
 
 files {
-	'html/design.css',
+	'html/*.css',
 	'html/index.html',
 	'html/*.js',
 	'html/fonts/*',	

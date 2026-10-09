@@ -68,8 +68,11 @@ function SetVehicleProp(vehicle, props)
 		if props.engineHealth then SetVehicleEngineHealth(vehicle, props.engineHealth + 0.0) end
 		if props.tankHealth then SetVehiclePetrolTankHealth(vehicle, props.tankHealth + 0.0) end
 		if props.dirtLevel then SetVehicleDirtLevel(vehicle, props.dirtLevel + 0.0) end
-		if props.rgb then SetVehicleCustomPrimaryColour(vehicle, props.rgb[1], props.rgb[2], props.rgb[3]) end
-		if props.rgb2 then SetVehicleCustomSecondaryColour(vehicle, props.rgb2[1], props.rgb2[2], props.rgb2[3]) end
+		-- customPrimary / customSecondary are only in props saved by the upgrade menu, older props always apply rgb
+		if props.rgb and props.customPrimary ~= false then SetVehicleCustomPrimaryColour(vehicle, props.rgb[1], props.rgb[2], props.rgb[3]) end
+		if props.rgb2 and props.customSecondary ~= false then SetVehicleCustomSecondaryColour(vehicle, props.rgb2[1], props.rgb2[2], props.rgb2[3]) end
+		if props.customPrimary == false then ClearVehicleCustomPrimaryColour(vehicle) end
+		if props.customSecondary == false then ClearVehicleCustomSecondaryColour(vehicle) end
 		if props.color1 then SetVehicleColours(vehicle, props.color1, colorSecondary) end
 		if props.color2 then SetVehicleColours(vehicle, props.color1 or colorPrimary, props.color2) end
 		if props.pearlescentColor then SetVehicleExtraColours(vehicle, props.pearlescentColor, wheelColor) end
@@ -117,8 +120,9 @@ function SetVehicleProp(vehicle, props)
 		if props.modArmor then SetVehicleMod(vehicle, 16, props.modArmor, false) end
 		if props.modTurbo then ToggleVehicleMod(vehicle,  18, props.modTurbo) else ToggleVehicleMod(vehicle,  18, false) end
 		if props.modXenon then ToggleVehicleMod(vehicle,  22, props.modXenon) else ToggleVehicleMod(vehicle,  22, false) end
-		if props.modFrontWheels then SetVehicleMod(vehicle, 23, props.modFrontWheels, false) end
-		if props.modBackWheels then SetVehicleMod(vehicle, 24, props.modBackWheels, false) end
+		if props.modFrontWheels then SetVehicleMod(vehicle, 23, props.modFrontWheels, props.modCustomTiresF == true) end
+		if props.modBackWheels then SetVehicleMod(vehicle, 24, props.modBackWheels, props.modCustomTiresF == true) end
+		if props.bulletProofTyres ~= nil then SetVehicleTyresCanBurst(vehicle, not props.bulletProofTyres) end
 		if props.modPlateHolder then SetVehicleMod(vehicle, 25, props.modPlateHolder, false) end
 		if props.modVanityPlate then SetVehicleMod(vehicle, 26, props.modVanityPlate, false) end
 		if props.modTrimA then SetVehicleMod(vehicle, 27, props.modTrimA, false) end
@@ -212,8 +216,8 @@ function GetVehicleProperties(vehicle)
             local extras = {}
             for extraId=0, 12 do
                 if DoesExtraExist(vehicle, extraId) then
-                    local state = IsVehicleExtraTurnedOn(vehicle, extraId) == 1
-                    extras[tostring(extraId)] = state
+                    local state = IsVehicleExtraTurnedOn(vehicle, extraId)
+                    extras[tostring(extraId)] = state == true or state == 1
                 end
             end
             local plate = GetVehicleNumberPlateText(vehicle)
@@ -229,6 +233,7 @@ function GetVehicleProperties(vehicle)
                 custom_tire       = GetVehicleTireType(vehicle),
                 custom_turbo      = GetVehicleTurbo(vehicle),
                 custom_engine     = GetVehicleEngine(vehicle),
+                custom_nitrous    = GetVehicleNitrous(vehicle),
                 model             = GetEntityModel(vehicle),
                 plate             = plate,
                 plateIndex        = GetVehicleNumberPlateTextIndex(vehicle),
@@ -243,6 +248,8 @@ function GetVehicleProperties(vehicle)
                 color2            = colorSecondary,
                 rgb				  = table.pack(GetVehicleCustomPrimaryColour(vehicle)),
                 rgb2				  = table.pack(GetVehicleCustomSecondaryColour(vehicle)),
+                customPrimary     = Customs.Truthy(GetIsVehiclePrimaryColourCustom(vehicle)),
+                customSecondary   = Customs.Truthy(GetIsVehicleSecondaryColourCustom(vehicle)),
                 pearlescentColor  = pearlescentColor,
                 wheelColor        = wheelColor,
 
@@ -286,6 +293,8 @@ function GetVehicleProperties(vehicle)
 
                 modFrontWheels    = GetVehicleMod(vehicle, 23),
                 modBackWheels     = GetVehicleMod(vehicle, 24),
+                modCustomTiresF   = Customs.Truthy(GetVehicleModVariation(vehicle, 23)),
+                bulletProofTyres  = not Customs.Truthy(GetVehicleTyresCanBurst(vehicle)),
 
                 modPlateHolder    = GetVehicleMod(vehicle, 25),
                 modVanityPlate    = GetVehicleMod(vehicle, 26),
@@ -818,34 +827,6 @@ exports('GetHandlingfromModel', function(model,vehicle)
     return GetHandlingfromModel(model,vehicle)
 end)
 
-function ControlCam(val,x,y,z)
-    control = val
-	SetCamActive(cam, true)
-	local entity = GetVehiclePedIsIn(PlayerPedId())
-	local dimension = GetModelDimensions(GetEntityModel(entity))
-	local l,w,h = dimension.y*-2, dimension.x*-2, dimension.z*-2
-	SetCamCoord(cam, CamOption(val,x,y,z,entity,w,l,h))
-	PointCamAtCoord(cam,GetOffsetFromEntityInWorldCoords(entity, 0, 0, 0))
-	RenderScriptCams( 1, 1, 1500, 0, 0)
-end
-
-function BoneCamera(bone)
-    CreateModCam()
-	SetCamActive(cam, true)
-	local vehicle = GetVehiclePedIsIn(PlayerPedId())
-    local boneindex = GetEntityBoneIndexByName(vehicle, bone)
-    if boneindex == -1 and bone == 'wheel_rf' then
-        bone = 'engine'
-    end
-	if bone ~= -1 then
-		local offset = GetOffsetFromEntityGivenWorldCoords(vehicle, GetWorldPositionOfEntityBone(vehicle, GetEntityBoneIndexByName(vehicle, bone)))
-		local x,y,z = table.unpack(GetOffsetFromEntityInWorldCoords(vehicle, offset.x + 1, offset.y + 1, offset.z +1))
-		SetCamCoord(cam, x, y, z)
-		PointCamAtCoord(cam,GetOffsetFromEntityInWorldCoords(vehicle, 0, offset.y, offset.z))
-		RenderScriptCams( 1, 1, 1100, 0, 0)
-	end
-end
-
 function numWithCommas(n)
     return tostring(math.floor(n)):reverse():gsub("(%d%d%d)","%1,")
                                   :gsub(",(%-?)$","%1"):reverse()
@@ -859,27 +840,4 @@ function GetExtras()
             extras['Extra - '..tostring(extraId)..''] = tostring(extraId)
         end
     end
-end
-
-function CreateModCam()
-    SetCamCoord(cam,GetGameplayCamCoords())
-	SetCamRot(cam, GetGameplayCamRot(2), 2)
-	RenderScriptCams( 0, 1, 1000, 0, 0)
-	SetCamActive(gameplaycam, true)
-	EnableGameplayCam(true)
-	SetCamActive(cam, false)
-end
-
-function CamOption(val,x,y,z,entity,w,l,h)
-    local view = {
-        ['left'] = {-(w/2) + x, y, z},
-        ['right'] = {(w/2) + x, y, z},
-        ['front'] = {x, (l/2)+ y, z},
-        ['front-top'] = {x, (l/2) + y,(h) + z},
-        ['back'] = {x, -(l/2) + y,z},
-        ['back-top'] = {x, -(l/2) + y,(h/2) + z},
-        ['middle'] = {x, y, (h/2) + z},
-    }
-    local x,y,z = table.unpack(GetOffsetFromEntityInWorldCoords(entity, table.unpack(view[val])))
-    return x,y,z
 end

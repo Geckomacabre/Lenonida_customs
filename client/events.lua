@@ -226,7 +226,7 @@ AddEventHandler('renzu_customs:openstockroom', function(current)
                             end
                             openmenu = true
                             if multimenu[vehicle][v.label].main_fa == nil then
-                                multimenu[vehicle][v.label].main_fa = '<img style="height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 35px;float: left;" src="https://cfx-nui-renzu_customs/html/img/'..k..'.svg">'
+                                multimenu[vehicle][v.label].main_fa = '<img style="height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 35px;float: left;" src="https://cfx-nui-'..GetCurrentResourceName()..'/html/img/'..k..'.svg">'
                             end
                             multimenu[vehicle][v.label][i] = {
                                 ['title'] = label,
@@ -436,10 +436,10 @@ AddEventHandler('renzu_customs:vehiclemod', function(vehicle)
                 local mod = Config.VehicleMod[i]
                 if GetVehicleMod(vehicle,mod.index) + 1 > 0 then
                     if multimenu[mod.type:upper()] == nil then multimenu[mod.type:upper()] = {} end
-                    multimenu[mod.type:upper()].main_fa = '<img style="height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 35px;float: left;" src="https://cfx-nui-renzu_customs/html/img/'..i..'.svg">'
+                    multimenu[mod.type:upper()].main_fa = '<img style="height: auto;margin-left: -20px;margin-top: -10px;position: relative;max-width: 35px;float: left;" src="https://cfx-nui-'..GetCurrentResourceName()..'/html/img/'..i..'.svg">'
                     multimenu[mod.type:upper()][mod.label:upper()..' '..GetVehicleMod(vehicle,i) + 1] = {
                         ['title'] = mod.label..' '..GetVehicleMod(vehicle,i) + 1,
-                        ['fa'] = '<img style="height: auto;position: absolute;max-width: 30px;left:5%;top:25%;" src="https://cfx-nui-renzu_customs/html/img/'..i..'.svg">',
+                        ['fa'] = '<img style="height: auto;position: absolute;max-width: 30px;left:5%;top:25%;" src="https://cfx-nui-'..GetCurrentResourceName()..'/html/img/'..i..'.svg">',
                         ['type'] = 'event', -- event / export
                         ['content'] = 'renzu_customs:removevehiclemod',
                         ['variables'] = {server = false, send_entity = false, onclickcloseui = true, custom_arg = {mod,GetVehicleMod(vehicle,mod.index) + 1,vehicle}, arg_unpack = true},
@@ -522,105 +522,20 @@ end)
 
 RegisterNetEvent('renzu_customs:openmenu')
 AddEventHandler('renzu_customs:openmenu', function(menu)
-    local custom = {}
     local vehicle = GetVehiclePedIsIn(PlayerPedId())
     if vehicle == 0 then
         vehicle = GetVehiclePedIsIn(PlayerPedId(),true)
     end
-    oldprop = GetVehicleProperties(vehicle)
+    local shop = nil
     for k,v in pairs(Config.Customs) do
         local distance = #(GetEntityCoords(PlayerPedId()) - vector3(v.shopcoord.x,v.shopcoord.y,v.shopcoord.z))
-        if distance < v.radius or menu then
-            TriggerServerCallback_("renzu_customs:getmoney",function(money)
-                gameplaycam = GetRenderingCam()
-                if not IsCamActive(cam) then
-                    cam = CreateCam("DEFAULT_SCRIPTED_CAMERA",true,2)
-                    CreateModCam()
-                    ControlCam('front',-2.5,0.1,1.3)
-                else
-                    CreateModCam()
-                    SetCamActive(cam, true)
-                    ControlCam('front',-2.5,0.1,1.3)
-                end
-                SetModable(vehicle) 
-                local livery = false
-                local vehicle_val = GetVehicleValue(GetEntityModel(vehicle)) * Config.VehicleValuePercent
-                for k,v in pairs(Config.VehicleMod) do
-                    if Config.JobPermissionAll and PlayerData ~= nil and PlayerData.job ~= nil and v.job_grade ~= nil and v.job_grade[PlayerData.job.name] ~= nil and PlayerData.job.grade >= v.job_grade[PlayerData.job.name] 
-                    or not Config.JobPermissionAll or Config.JobPermissionAll and v.job_grade ~= nil and v.job_grade['all'] ~= nil or menu then
-                        if custom[v.type:upper()] == nil then custom[v.type:upper()] = {} custom[v.type:upper()].index = k end
-                        local max = GetNumVehicleMods(vehicle, tonumber(v.index)) + 1
-                        if k == 48 and max <= 1 then
-                            max = GetVehicleLiveryCount(vehicle) + 1
-                            livery = true
-                        end
-                        if k == 'extra' then
-                            v.extra()
-                            v.list = extras
-                        end
-                        local list = {}
-                        if Config.DoNotShowEmptyMods and max > 1 or not Config.DoNotShowEmptyMods and max > 0 or k == 'paint1' or k == 'paint2' or k == 'neon' or k == 'plate' or k == 'headlight' or k == 'window' or k == 18 or k == 'extra' or k == 'custom_engine' or k == 'custom_turbo' or k == 'custom_tires' then
-                            local upgrades = 0
-                            if max > 0 then
-                                for i = 0, max do
-                                    if livery and i >= 1 and GetLabelText(GetLiveryName(vehicle,i-1)) ~= 'NULL' then
-                                        list[i] = GetLabelText(GetLiveryName(vehicle,i-1))
-                                    elseif GetLabelText(GetModTextLabel(vehicle, v.index, i-1)) ~= 'NULL' and i >= 1 then
-                                        list[i] = GetLabelText(GetModTextLabel(vehicle, v.index, i-1))
-                                    elseif i >= 1 then
-                                        list[i] = v.name.." Lvl "..i
-                                    else
-                                        list[i] = 'Default'
-                                    end
-                                    upgrades = i
-                                end
-                            end
-                            local cost = v.cost + (vehicle_val / v.percent_cost) * 1.0
-                            if not Config.VehicleValuetoFormula then
-                                cost = v.cost
-                            end
-                            if Config.EnableDiscounts and PlayerData.job ~= nil and v.discount[PlayerData.job.name] ~= nil then
-                                cost = cost * (1-tonumber(v.discount[PlayerData.job.name]))
-                            elseif Config.EnableDiscounts and PlayerData.job ~= nil and Config.JobDiscounts[PlayerData.job.name] ~= nil then
-                                cost = cost * (1-tonumber(Config.JobDiscounts[PlayerData.job.name]))
-                            end
-                            if Config.FreeUpgradeToClass[GetVehicleClass(vehicle)] then
-                                cost = 0
-                            end
-                            custom[v.type:upper()][v.index] = {
-                                label = v.label or nil, 
-                                index = v.index, 
-                                name = v.name, 
-                                max = max or 0, 
-                                cost = cost,
-                                list = v.list or {}, 
-                                type = v.type or 'cosmetic', 
-                                mod = list or {}, 
-                                action = v.action or false, 
-                                multicostperlvl = v.multicostperlvl or false
-                            }
-                        end
-                    end
-                end
-                local health = GetVehicleBodyHealth(vehicle)
-                if Config.DisableRepair then
-                    health = 1000
-                end
-                SendNUIMessage({
-                    type = "custom",
-                    custom = custom,
-                    show = true,
-                    money = numWithCommas(money),
-                    vehicle_health = health,
-                    shop = k or 'admin',
-                })
-                FreezeEntityPosition(vehicle,true)
-                SetNuiFocus(true,true)
-            end, NetworkGetNetworkIdFromEntity(vehicle), oldprop)
-            if menu then
-                break
-            end
+        if distance < v.radius then
+            shop = k
+            break
         end
+    end
+    if shop or menu then
+        OpenCustomsMenu(vehicle, shop, menu == true)
     end
 end)
 

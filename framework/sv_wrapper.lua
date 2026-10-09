@@ -1,3 +1,10 @@
+-- 'auto' picks the framework that is running. Qbox goes through its qb-core bridge.
+if Config.framework == 'QBOX' then
+	Config.framework = 'QBCORE'
+elseif Config.framework == 'auto' then
+	Config.framework = GetResourceState('es_extended'):find('start') and 'ESX' or 'QBCORE'
+end
+
 function Initialized()
 	if Config.framework == 'ESX' then
 		ESX = exports['es_extended']:getSharedObject()
@@ -24,6 +31,7 @@ function GetPlayerFromId(src)
 	elseif Config.framework == 'QBCORE' then
 		selfcore = {}
 		selfcore.data = QBCore.Functions.GetPlayer(self.src)
+		if not selfcore.data then return nil end
 		if selfcore.data.identifier == nil then
 			selfcore.data.identifier = selfcore.data.PlayerData.citizenid
 		end
@@ -44,6 +52,34 @@ function GetPlayerFromId(src)
 		-- a lot of qbcore functions and variables need to port , its possible to port all, but we only port what this script needs.
 		return selfcore.data
 	end
+end
+
+-- Money a player has in 'cash' or 'bank'
+function PlayerBalance(xPlayer, account)
+	if Config.framework == 'ESX' then
+		if account == 'cash' then return xPlayer.getMoney() end
+		local acc = xPlayer.getAccount(account)
+		return acc and acc.money or 0
+	end
+	return xPlayer.PlayerData.money[account] or 0
+end
+
+-- Takes amount from the first account in Config.PayAccounts that can cover it
+function ChargePlayer(xPlayer, amount)
+	if amount <= 0 then return true end
+	for _, account in ipairs(Config.PayAccounts) do
+		if PlayerBalance(xPlayer, account) >= amount then
+			if Config.framework ~= 'ESX' then
+				xPlayer.Functions.RemoveMoney(account, amount, 'customs')
+			elseif account == 'cash' then
+				xPlayer.removeMoney(amount)
+			else
+				xPlayer.removeAccountMoney(account, amount)
+			end
+			return true
+		end
+	end
+	return false
 end
 
 function VehicleNames()

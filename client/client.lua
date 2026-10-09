@@ -40,7 +40,7 @@ Citizen.CreateThread(function()
     if Config.UseCustomEngineUpgrade then
         nextgearhash = `SET_VEHICLE_NEXT_GEAR`
         setcurrentgearhash = `SET_VEHICLE_CURRENT_GEAR`
-        local jsonf = LoadResourceFile("renzu_customs","handling.min.json")
+        local jsonf = LoadResourceFile(GetCurrentResourceName(),"handling.min.json")
         vehiclehandling = json.decode(jsonf)
         while true do
             local vehicle = GetVehiclePedIsIn(PlayerPedId())
@@ -153,7 +153,7 @@ Citizen.CreateThread(function()
                             SetVehicleTurboPressure(vehicle , boost + turbo.Power * rpm)
                             if GetVehicleTurboPressure(vehicle) >= turbo.Power then
                                 --print(GetVehicleTurboPressure(vehicle),(turbo.fDriveInertia * GetVehicleTurboPressure(vehicle)))
-                                SetVehicleCheatPowerIncrease(vehicle,turbo.Power * GetVehicleTurboPressure(vehicle))
+                                SetVehicleCheatPowerIncrease(vehicle,turbo.Power * GetVehicleTurboPressure(vehicle) * (NitrousPower or 1.0)) -- nitrous stacks on the turbo
                                 --SetVehicleHandlingFloat(vehicle , "CHandlingData", "fDriveInertia", tonumber(default.fDriveInertia) + (turbo.fDriveInertia * rpm))
                                 --SetVehicleHandlingFloat(vehicle , "CHandlingData", "fInitialDriveForce", tonumber(default.fInitialDriveForce) + (turbo.fInitialDriveForce * rpm))
                             end
