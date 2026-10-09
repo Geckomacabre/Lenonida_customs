@@ -32,6 +32,7 @@ files {
 	'html/*.js',
 	'html/fonts/*',	
 	'html/img/*.svg',
+	'html/logos/*.png',
 	'imgs/uploads/*.jpg',
 	'html/audio/*.ogg',
 	'handling.min.json',

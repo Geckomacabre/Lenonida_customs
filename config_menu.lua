@@ -12,9 +12,10 @@ Config.MenuKeys = {
 	card = 'Tab', -- cycle the vehicle card (name / stats / fitted parts)
 }
 
--- An upgrade the menu points players to until their vehicle has it: a tag on its tab, a dot on
--- its category and the line at the bottom of the screen (~words~ are highlighted). false = off
-Config.FeaturedUpgrade = { slot = 'nitrous', text = 'Apply the ~nitrous boost~ mod' }
+-- Controller: d-pad / left stick move, A select / buy, B back, X (hold) rev, Y card page,
+-- LB / RB tabs, right stick look around, LT / RT zoom.
+-- Button names shown in the prompts while a controller is in use: 'xbox' or 'playstation'
+Config.PadGlyphs = 'xbox'
 
 -- Blur the background behind the vehicle while the menu is open (needs PostFX on High or above)
 Config.MenuDepthOfField = true
@@ -41,6 +42,7 @@ Config.ExtraPrices = {
 Config.UseNitrous = true
 Config.Nitrous = {
 	key = 'LSHIFT', -- default key, players can rebind it in Settings > Key Bindings > FiveM
+	padButton = 'L3_INDEX', -- default controller button (left stick press, the game's own boost button), false = none
 	refillDelay = 1.5, -- seconds after boosting before the tank starts to refill
 	minLevel = 0.25, -- after running the tank dry it must refill to this level (0.0-1.0) before it works again
 	flames = true, -- exhaust flames while boosting

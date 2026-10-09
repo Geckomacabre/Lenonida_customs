@@ -16,6 +16,7 @@
     let previewTimer = null;
     let previewSeq = 0;
     let playing = '';
+    let padMode = false; // a controller is in use: its button names go in the prompts
 
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -47,12 +48,28 @@
         check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         dirt: '<svg class="rate" viewBox="0 0 24 24"><rect x="1.5" y="1.5" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 18l5-9 3.5 5 3-7 6.5 11z" fill="currentColor"/></svg>',
         road: '<svg class="rate" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" fill="currentColor"/><path d="M8.5 3L5 21h4.6l.6-5h3.6l.6 5H19L15.5 3z" fill="#22222b"/><path d="M11.4 5.5h1.2v3h-1.2zM11.2 10.5h1.6v3.5h-1.6z" fill="currentColor"/></svg>',
-        enter: '&#8629;',
-        back: 'ESC',
     };
     const have = `<i class="have">${ICONS.check}</i>`;
 
     const keyLabel = (code) => String(code || '').replace(/^Key|^Digit/, '').replace('Tab', 'TAB').toUpperCase();
+
+    // what is drawn in the circle next to a prompt, for the keyboard or for the controller in use
+    const PAD_GLYPHS = {
+        xbox: { ok: 'A', back: 'B', rev: 'X', card: 'Y', prev: 'LB', next: 'RB' },
+        playstation: { ok: '&#10005;', back: '&#9675;', rev: '&#9633;', card: '&#9651;', prev: 'L1', next: 'R1' },
+    };
+
+    function glyph(action) {
+        if (padMode) return (PAD_GLYPHS[D.pad && D.pad.style] || PAD_GLYPHS.xbox)[action];
+        const keys = D.keys || {};
+        return { ok: '&#8629;', back: 'ESC', rev: keyLabel(keys.rev), card: keyLabel(keys.card), prev: 'Q', next: 'E' }[action];
+    }
+
+    function keyHtml(action, cls, tag) {
+        const text = glyph(action);
+        const wide = text.length > 1 && text.charAt(0) !== '&';
+        return `<${tag || 'i'} class="key${wide ? ' wide' : ''}${cls || ''}">${text}</${tag || 'i'}>`;
+    }
 
     // STATE HELPERS
 
@@ -64,8 +81,9 @@
     }
 
     const kitStatus = (id) => (D.owned.kit === id ? 'applied' : 'none');
-    const isFeatured = (slot) => !!D.featured && D.featured.slot === slot;
-    const featuredCategory = (category) => !category.kits && category.slots.some(isFeatured);
+    // a mission can point at a slot (see SetMenuObjective): tag on its tab, dot on its category
+    const isMarked = (slot) => !!D.objective && D.objective.slot === slot;
+    const markedCategory = (category) => !category.kits && category.slots.some(isMarked);
 
     function optionLabel(slot, value) {
         const found = slot.options.find((o) => o.value === value);
@@ -186,10 +204,6 @@
         D.owned = r.owned;
         D.stats = r.stats;
         shown = r.stats;
-        if (D.featured) {
-            const slot = D.slots[D.featured.slot];
-            if (D.owned[slot.id] !== slot.options[0].value) D.featured = null;
-        }
         const view = top();
         if (view.type === 'swatch' && view.slot.custom) {
             view.groups[view.groups.length - 1].options = [customOption(view.slot)];
@@ -212,7 +226,7 @@
             if (value === undefined) {
                 const option = currentOption(view);
                 if (!option) return;
-                if (option.custom) return $('picker').click();
+                if (option.custom) return padMode ? null : $('picker').click();
                 value = option.value;
             }
             if (value === D.owned[view.slot.id]) return; // already on the vehicle
@@ -319,8 +333,10 @@
     // RENDER
 
     function tabsHtml(labels, active, act, tagged) {
-        return `<nav class="tabs${labels.length === 1 ? ' single' : ''}">` + labels.map((label, i) =>
-            `<button type="button" class="tab${i === active ? ' on' : ''}" data-act="${act}:${i}">${tagged && tagged(i) ? ICONS.tag : ''}<span>${esc(label)}</span></button>`).join('') + '</nav>';
+        const several = labels.length > 1; // the bumpers (or Q / E) step through them
+        return `<nav class="tabs${several ? '' : ' single'}">` + (several ? `<span data-act="prev">${keyHtml('prev', ' bump')}</span>` : '') + labels.map((label, i) =>
+            `<button type="button" class="tab${i === active ? ' on' : ''}" data-act="${act}:${i}">${tagged && tagged(i) ? ICONS.tag : ''}<span>${esc(label)}</span></button>`).join('') +
+            (several ? `<span data-act="next">${keyHtml('next', ' bump')}</span>` : '') + '</nav>';
     }
 
     function renderHead() {
@@ -328,7 +344,7 @@
         if (view.type === 'root') {
             $('head').className = 'root';
             $('head').innerHTML = `<h1 class="shop">${esc(D.shop.label)}</h1>` +
-                tabsHtml(D.tabs.map((t) => t.label), view.tab, 'tab', (i) => D.tabs[i].categories.some(featuredCategory));
+                tabsHtml(D.tabs.map((t) => t.label), view.tab, 'tab', (i) => D.tabs[i].categories.some(markedCategory));
         } else {
             $('head').className = 'sub';
             $('head').innerHTML = `<div class="crumb">${esc(view.crumb)} <i>/</i></div><h1 class="title">${esc(view.title)}</h1>`;
@@ -340,10 +356,10 @@
         let rows = [];
         let sel = view.sel;
         if (view.type === 'root') {
-            rows = tab().categories.map((c) => ({ label: c.label, dot: featuredCategory(c) }));
+            rows = tab().categories.map((c) => ({ label: c.label, dot: markedCategory(c) }));
             sel = view.sel[view.tab];
         } else if (view.type === 'slots') {
-            rows = view.category.slots.map((id) => ({ label: D.slots[id].label, dot: isFeatured(id), right: optionLabel(D.slots[id], D.owned[id]) }));
+            rows = view.category.slots.map((id) => ({ label: D.slots[id].label, dot: isMarked(id), right: optionLabel(D.slots[id], D.owned[id]) }));
         } else if (view.type === 'groups') {
             const current = String(D.owned[view.slot.id]).split(':')[0];
             rows = view.slot.groups.map((g) => ({ label: g.label, have: String(g.id) === current }));
@@ -360,10 +376,10 @@
         $('count').textContent = rows.length > LIST_ROWS ? `${sel + 1} / ${rows.length}` : '';
     }
 
-    function statusHtml(status, price, featured) {
+    function statusHtml(status, price, marked) {
         if (status === 'stock') return '';
         if (status === 'applied') return `<div class="line"></div><div class="status">${have}<span>Applied</span></div>`;
-        return `<div class="line"></div><div class="status">${featured ? '<i class="dot"></i>' : ''}<span>Not owned</span><span class="price">${price ? cash(price) : 'Free'}</span></div>`;
+        return `<div class="line"></div><div class="status">${marked ? '<i class="dot"></i>' : ''}<span>Not owned</span><span class="price">${price ? cash(price) : 'Free'}</span></div>`;
     }
 
     function swatchHtml(view, option, i) {
@@ -389,7 +405,7 @@
             el.className = 'item';
             el.innerHTML = `<h2 class="name">${esc(option.label)}</h2>` +
                 (count > 1 ? `<div class="counter" data-act="down">${view.sel + 1}<i>/</i>${count}</div>` : '') +
-                statusHtml(status, option.price, !kit && isFeatured(view.slot.id));
+                statusHtml(status, option.price, !kit && isMarked(view.slot.id));
         } else if (view.type === 'swatch') {
             const group = view.groups[view.g];
             const option = group.options[view.sel];
@@ -404,7 +420,7 @@
             el.innerHTML = `<h2 class="name">${esc(option.label)}</h2><h3 class="sub">${esc(look.finish || view.slot.label)}</h3>` +
                 `<div class="swatches">${group.options.slice(offset, offset + SWATCH_ROW).map((o, n) => swatchHtml(view, o, offset + n)).join('')}${more}</div>` +
                 (view.groups.length > 1 ? tabsHtml(view.groups.map((g) => g.name), view.g, 'grp') : '<div class="tabs"></div>') +
-                (statusHtml(statusOf(view.slot.id, option), option.price, isFeatured(view.slot.id)) || '<div class="status"></div>');
+                (statusHtml(statusOf(view.slot.id, option), option.price, isMarked(view.slot.id)) || '<div class="status"></div>');
         } else {
             el.className = '';
             el.innerHTML = '';
@@ -448,9 +464,12 @@
 
     function renderCard() {
         const page = cardPage();
-        let html = `<div class="dots">${['name', 'stats', 'parts'].map((p) => `<i class="${p === page ? 'on' : ''}"></i>`).join('')}</div>` +
+        // manufacturer mark behind the name, from the same table and files vice_hud uses
+        const make = window.VICE_MAKES ? window.VICE_MAKES.lookup(D.vehicle.brand) : null;
+        const emblem = make && make.logo ? `<img class="emblem" src="${make.logo}" alt="">` : '';
+        let html = `<div class="dots" data-act="card">${keyHtml('card', ' mini', 'kbd')}${['name', 'stats', 'parts'].map((p) => `<i class="${p === page ? 'on' : ''}"></i>`).join('')}</div>` +
             `<div class="card-head"><div class="brand">${esc(D.vehicle.brand)}</div><div class="model">${esc(D.vehicle.name)}</div>` +
-            `<div class="emblem">${esc((D.vehicle.brand || D.vehicle.name || '?').charAt(0))}</div></div>`;
+            `${emblem}</div>`;
         if (page === 'stats') {
             html += '<div class="card-body">' + STATS.map(([key, label]) => statHtml(label, shown[key])).join('') + '</div>' +
                 `<div class="card-foot"><span>Rating</span><span class="ratings">${ratingHtml(shown.dirt, ICONS.dirt)}${ratingHtml(shown.road, ICONS.road)}</span></div>`;
@@ -466,27 +485,27 @@
 
     function promptList() {
         const view = top();
-        const keys = D.keys || {};
         const list = [];
         const leaf = view.type === 'item' || view.type === 'swatch' || view.type === 'kits';
         const engine = tab().id === 'performance' && !(view.slot && view.slot.id === 'nitrous');
         if (view.type === 'kits' || (engine && (view.type === 'root' || view.type === 'item'))) {
-            list.push({ label: 'Rev', key: keyLabel(keys.rev), act: 'rev' });
+            list.push({ label: 'Rev', act: 'rev' });
         }
         if (!leaf) {
-            list.push({ label: 'Select', key: ICONS.enter, act: 'ok' });
+            list.push({ label: 'Select', act: 'ok' });
         } else if (view.type === 'kits') {
-            if (kitStatus(D.kits[view.sel].id) !== 'applied') list.push({ label: 'Buy', key: ICONS.enter, act: 'ok' });
+            if (kitStatus(D.kits[view.sel].id) !== 'applied') list.push({ label: 'Buy', act: 'ok' });
         } else {
             const option = currentOption(view);
-            if (statusOf(view.slot.id, option) !== 'applied') list.push({ label: option.custom ? 'Pick' : 'Buy', key: ICONS.enter, act: 'ok' });
+            // the colour picker needs a mouse
+            if (option.custom ? !padMode : statusOf(view.slot.id, option) !== 'applied') list.push({ label: option.custom ? 'Pick' : 'Buy', act: 'ok' });
         }
-        list.push(stack.length > 1 ? { label: 'Back', key: ICONS.back, act: 'back' } : { label: 'Exit', key: ICONS.back, act: 'back', hold: true });
+        list.push(stack.length > 1 ? { label: 'Back', act: 'back' } : { label: 'Exit', act: 'back', hold: true });
         return list;
     }
 
     function promptsHtml(list) {
-        return list.map((p) => `<button type="button" data-act="${p.act}"><span>${esc(p.label)}</span><i class="key${p.key.length > 1 && p.key.charAt(0) !== '&' ? ' wide' : ''}${p.hold ? ' hold' : ''}">${p.key}</i></button>`).join('');
+        return list.map((p) => `<button type="button" data-act="${p.act}"><span>${esc(p.label)}</span>${keyHtml(p.act, p.hold ? ' hold' : '')}</button>`).join('');
     }
 
     function render() {
@@ -496,8 +515,8 @@
             $('dialog').hidden = false;
             $('dialog-title').textContent = dialog.title;
             $('dialog-body').innerHTML = dialog.lines.map((line) => `<p>${esc(line)}</p>`).join('');
-            const list = [{ label: 'OK', key: ICONS.enter, act: 'ok' }];
-            if (dialog.back) list.push({ label: 'Back', key: ICONS.back, act: 'back' });
+            const list = [{ label: 'OK', act: 'ok' }];
+            if (dialog.back) list.push({ label: 'Back', act: 'back' });
             $('dialog-prompts').innerHTML = promptsHtml(list);
             return;
         }
@@ -507,7 +526,7 @@
         renderMenu();
         renderDetail();
         renderCard();
-        $('objective').innerHTML = D.featured ? esc(D.featured.text).replace(/~([^~]+)~/g, '<b>$1</b>') : '';
+        $('objective').innerHTML = D.objective && D.objective.text ? esc(D.objective.text).replace(/~([^~]+)~/g, '<b>$1</b>') : '';
         $('hint').textContent = view.type === 'root' ? tab().categories[view.sel[view.tab]].hint : view.type === 'slots' ? view.category.hint : '';
         $('prompts').innerHTML = promptsHtml(promptList());
     }
@@ -561,8 +580,17 @@
         post('Rev', { on });
     }
 
+    // keyboard or mouse touched: back to their prompts, and the cursor comes back
+    function usedKeyboard() {
+        if (!padMode) return;
+        padMode = false;
+        post('Input', { pad: false });
+        render();
+    }
+
     document.addEventListener('keydown', (e) => {
         if (!D) return;
+        usedKeyboard();
         const action = actionOf(e.code);
         if (!action) return;
         e.preventDefault();
@@ -613,6 +641,7 @@
         }
     }
     document.addEventListener('mousedown', (e) => {
+        if (D) usedKeyboard();
         if (D && !dialog && (e.target.id === 'app' || e.target.classList.contains('shade'))) drag = { x: e.clientX, y: e.clientY };
     });
     document.addEventListener('mousemove', (e) => {
@@ -654,7 +683,8 @@
         D.kits = Array.isArray(D.kits) ? D.kits : [];
         D.tabs = Array.isArray(D.tabs) ? D.tabs : [];
         D.slots = D.slots && !Array.isArray(D.slots) ? D.slots : {};
-        D.featured = D.featured || null;
+        D.objective = D.objective || null;
+        padMode = !!(D.pad && D.pad.active);
         shown = D.stats;
         dialog = null;
         busy = false;
@@ -680,6 +710,16 @@
             D = null;
             revving = false;
             $('app').hidden = true;
+        } else if (data.type === 'objective' && D) {
+            D.objective = data.objective || null;
+            render();
+        } else if (data.type === 'pad' && D) {
+            // the game reads the controller (NUI does not get it) and passes it on
+            const was = padMode;
+            padMode = data.mode !== undefined ? data.mode : true;
+            if (padMode !== was) render();
+            if (data.action === 'rev') rev(data.on === true);
+            else if (data.action) act(data.action, false);
         } else if (data.type === 'playsound') {
             const file = data.content.file;
             if (playing !== file) {

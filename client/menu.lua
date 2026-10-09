@@ -5,6 +5,7 @@
 local session = nil -- everything about the menu that is open right now
 local opening = false
 local revving = false
+local objective = nil -- { text, slot } from a mission script, see SetMenuObjective
 
 local Labels = {
 	['mod:11'] = 'Engine Tune', ['mod:24'] = 'Rear Wheel', ['mod:27'] = 'Trim Design', ['mod:33'] = 'Steering Wheel',
@@ -637,6 +638,77 @@ local function cameraLoop()
 	DestroyCam(cam, false)
 end
 
+-- CONTROLLER
+-- With NUI focus the game still receives the gamepad (the menu page does not), so it is read
+-- here and handed to the menu. The same loop keeps the pad from driving the vehicle, leaving
+-- it or opening the pause menu behind the menu.
+
+local PadButtons = { ok = 201, back = 202, card = 204, prev = 205, next = 206 } -- A, B, Y, LB, RB
+
+local function padPressed(control)
+	return IsControlPressed(2, control) or IsDisabledControlPressed(2, control)
+end
+
+local function padJustPressed(control)
+	return IsControlJustPressed(2, control) or IsDisabledControlJustPressed(2, control)
+end
+
+local function setPadMode(on)
+	session.pad = on
+	SetNuiFocus(true, not on) -- no mouse cursor while a controller is in use
+	SendNUIMessage({ type = 'pad', mode = on })
+end
+
+local function padLoop()
+	local direction, nextRepeat, revHeld = nil, 0, false
+	while session do
+		DisableAllControlActions(0)
+		DisableControlAction(2, 199, true) -- pause
+		DisableControlAction(2, 200, true)
+		local usingPad = not IsUsingKeyboard(2)
+		if session.pad and not usingPad then setPadMode(false) end -- the mouse moved
+		local actions, rev = {}, false
+		if usingPad then
+			-- d-pad or left stick, repeating while held
+			local lx, ly = GetDisabledControlNormal(2, 195), GetDisabledControlNormal(2, 196)
+			local want = (padPressed(188) or ly < -0.6) and 'up' or (padPressed(187) or ly > 0.6) and 'down'
+				or (padPressed(189) or lx < -0.6) and 'left' or (padPressed(190) or lx > 0.6) and 'right' or nil
+			local now = GetGameTimer()
+			if want ~= direction then
+				direction = want
+				nextRepeat = now + 380
+				if want then actions[#actions + 1] = want end
+			elseif want and now >= nextRepeat then
+				nextRepeat = now + 130
+				actions[#actions + 1] = want
+			end
+			for action, control in pairs(PadButtons) do
+				if padJustPressed(control) then actions[#actions + 1] = action end
+			end
+			rev = padPressed(203) -- X, held
+			-- right stick looks around the vehicle, the triggers zoom
+			local rx, ry = GetDisabledControlNormal(2, 197), GetDisabledControlNormal(2, 198)
+			local zoom = GetDisabledControlNormal(2, 208) - GetDisabledControlNormal(2, 207)
+			local looking = math.abs(rx) > 0.15 or math.abs(ry) > 0.15 or math.abs(zoom) > 0.1
+			if looking and camera and camera.goal then
+				local goal, dt = camera.goal, GetFrameTime()
+				if math.abs(rx) > 0.15 then goal.yaw = goal.yaw - rx * 150.0 * dt end
+				if math.abs(ry) > 0.15 then goal.pitch = math.max(-4.0, math.min(70.0, goal.pitch - ry * 80.0 * dt)) end
+				if math.abs(zoom) > 0.1 then goal.dist = math.max(goal.min, math.min(goal.max, goal.dist * (1.0 - zoom * 1.2 * dt))) end
+			end
+			if not session.pad and (#actions > 0 or rev or looking) then setPadMode(true) end
+		end
+		for _, action in ipairs(actions) do
+			SendNUIMessage({ type = 'pad', action = action })
+		end
+		if rev ~= revHeld then
+			revHeld = rev
+			SendNUIMessage({ type = 'pad', action = 'rev', on = rev })
+		end
+		Wait(0)
+	end
+end
+
 -- OPEN / CLOSE
 
 -- Tells other resources the menu is open. The HUD decides what it keeps on screen (the menu
@@ -721,23 +793,22 @@ function OpenCustomsMenu(vehicle, shop, admin)
 		session.base = baseSpec(vehicle)
 		local tabs, kits = buildMenu(vehicle)
 		local health = GetVehicleBodyHealth(vehicle)
-		local featured = Config.FeaturedUpgrade
-		if featured and not (session.slots[featured.slot] and session.owned[featured.slot] == session.slots[featured.slot].options[1].value) then
-			featured = nil -- already fitted, or not for this vehicle
-		end
 		local staff = shop ~= nil and job ~= nil and Config.Customs[shop].job == job.name
 		local brand, name = '', GetDisplayNameFromVehicleModel(GetEntityModel(vehicle))
 		local make = GetMakeNameFromVehicleModel(GetEntityModel(vehicle))
 		brand = make and gameLabel(make) or make or ''
 		name = gameLabel(name) or name
+		if brand:upper() == name:upper() then brand = '' end -- addon vehicles often give the spawn name for both
 
 		FreezeEntityPosition(vehicle, true)
 		SetVehicleEngineOn(vehicle, true, true, false)
 		camera = {}
 		setView(tabs[1] and tabs[1].camera or 'rear34')
 		CreateThread(cameraLoop)
+		CreateThread(padLoop)
 		setMenuOpen(true)
-		SetNuiFocus(true, true)
+		session.pad = not IsUsingKeyboard(2) -- drove in with a controller
+		SetNuiFocus(true, not session.pad)
 		SendNUIMessage({
 			type = 'open',
 			shop = { id = shop or 'admin', label = Config.ShopLabels[shop] or shop or 'Customs' },
@@ -747,12 +818,13 @@ function OpenCustomsMenu(vehicle, shop, admin)
 			kits = kits,
 			owned = session.owned,
 			stats = statsPayload(session.owned),
-			featured = featured,
+			objective = objective,
 			repair = {
 				needed = health < 1000 and not Config.DisableRepair,
 				cost = (session.admin or staff) and 0 or Config.RepairCost,
 			},
 			keys = Config.MenuKeys,
+			pad = { style = Config.PadGlyphs, active = session.pad },
 		})
 	end, NetworkGetNetworkIdFromEntity(vehicle), oldprop)
 end
@@ -782,6 +854,14 @@ local function closeMenu(restore)
 	setMenuOpen(false)
 	TriggerServerEvent('renzu_customs:leaveshop')
 end
+
+-- For mission scripts that send the player to the mod shop: a line at the bottom of the menu
+-- (~words~ are highlighted) and, with a slot, a tag on its tab and a dot on its category.
+-- SetMenuObjective() with nothing clears it. The 'customs:purchased' event tells you what was bought.
+exports('SetMenuObjective', function(text, slot)
+	objective = text and { text = tostring(text), slot = slot } or nil
+	if session then SendNUIMessage({ type = 'objective', objective = objective }) end
+end)
 
 AddEventHandler('onResourceStop', function(resource)
 	if resource == GetCurrentResourceName() and session then
@@ -830,6 +910,7 @@ local function purchase(changes, cb)
 		if was['custom_engine'] ~= session.owned['custom_engine'] then SetVehicleEngine(vehicle, session.owned['custom_engine']) end
 		if was['custom_turbo'] ~= session.owned['custom_turbo'] then SetVehicleTurbo(vehicle, session.owned['custom_turbo']) end
 		if was['custom_tires'] ~= session.owned['custom_tires'] then SetVehicleTireType(vehicle, session.owned['custom_tires']) end
+		TriggerEvent('customs:purchased', changes) -- slot > value of what was just bought
 		cb({ ok = true, paid = result.total, owned = session.owned, stats = statsPayload(session.owned) })
 	end, { prop = props, shop = session.shop, class = GetVehicleClass(vehicle) })
 end
@@ -941,6 +1022,12 @@ RegisterNUICallback('Repair', function(_, cb)
 		oldprop.bodyHealth, oldprop.engineHealth, oldprop.tankHealth, oldprop.dirtLevel = 1000.0, 1000.0, 1000.0, 0.0
 		cb({ ok = true })
 	end, session.shop)
+end)
+
+-- a key or the mouse was used in the menu: give the cursor back
+RegisterNUICallback('Input', function(data, cb)
+	if session and session.pad and data.pad == false then setPadMode(false) end
+	cb(1)
 end)
 
 RegisterNUICallback('Close', function(_, cb)

@@ -85,7 +85,7 @@ button {
     cursor: pointer;
 }
 
-h1, h2, h3, .tab, .brand, .model, .emblem, .stat-label, .stat-val, .card-foot, .prompts button > span, #prompts button > span, .price, .pager {
+h1, h2, h3, .tab, .brand, .model, .stat-label, .stat-val, .card-foot, .prompts button > span, #prompts button > span, .price, .pager {
     font-family: var(--font-display);
     font-weight: 700;
     font-stretch: 75%;
@@ -125,6 +125,11 @@ h1, h2, h3, .tab, .brand, .model, .emblem, .stat-label, .stat-val, .card-foot, .
 
 #head .tabs {
     margin: 1.15vh 0 0 4.4vh;
+}
+
+/* room for the bumper glyph in front of the first tab */
+#head .tabs:not(.single) {
+    margin-left: .75vh;
 }
 
 #head.sub {
@@ -176,13 +181,13 @@ h1, h2, h3, .tab, .brand, .model, .emblem, .stat-label, .stat-val, .card-foot, .
     clip-path: polygon(var(--slant) 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
 
-.tab:first-child {
+.tab:first-of-type {
     margin-left: 0;
     padding-left: 1.5vh;
     clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
 }
 
-.tab:last-child {
+.tab:last-of-type {
     padding-right: 1.5vh;
     clip-path: polygon(var(--slant) 0, 100% 0, 100% 100%, 0 100%);
 }
@@ -353,19 +358,17 @@ svg.tag {
     color: #b9b6be;
 }
 
+/* Every mark is the same square canvas with the ink in the middle (about half of it), so one
+   size fits them all: the ink runs a little past the header and is cropped by it. */
 .emblem {
     position: absolute;
-    right: 1.7vh;
+    right: -1.75vh;
     top: 50%;
-    display: grid;
-    place-items: center;
-    width: 7.6vh;
-    height: 7.6vh;
-    margin-top: -3.8vh;
-    border-radius: 50%;
-    border: .75vh solid rgba(255, 255, 255, .13);
-    font-size: 4.2vh;
-    color: rgba(255, 255, 255, .15);
+    width: 15.5vh;
+    height: 15.5vh;
+    margin-top: -7.75vh;
+    opacity: .2;
+    pointer-events: none;
 }
 
 .card-body {
@@ -694,6 +697,10 @@ svg.rate:last-child {
     min-height: 3.6vh;
 }
 
+#detail .tabs:not(.single) {
+    margin-left: 1.15vh;
+}
+
 #detail .tab {
     height: 3.6vh;
     line-height: 3.6vh;
@@ -769,6 +776,40 @@ svg.rate:last-child {
     padding: 0 .75vh;
     font-size: 1.3vh;
     letter-spacing: .03em;
+}
+
+/* bumper glyphs at the ends of a tab strip, and the card page glyph beside its dots */
+.tabs > span {
+    display: flex;
+    align-items: center;
+    flex: none;
+    cursor: pointer;
+}
+
+.key.bump {
+    min-width: 2.7vh;
+    height: 2.7vh;
+    margin: 0 .95vh 0 0;
+}
+
+.tabs > span:last-child .key.bump {
+    margin: 0 0 0 .95vh;
+}
+
+.key.mini {
+    min-width: 2.3vh;
+    height: 2.3vh;
+    margin-right: .35vh;
+    font-size: 1.3vh;
+}
+
+.key.mini.wide {
+    font-size: 1.05vh;
+    padding: 0 .55vh;
+}
+
+.dots {
+    cursor: pointer;
 }
 
 .key.hold {

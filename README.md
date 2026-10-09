@@ -77,7 +77,7 @@ Config.FreeUpgradeToClass = { [18] = true, [19] = true } -- vehicle classes that
 - `Config.ShopLabels`: the title shown top left, per shop.
 - `Config.Menu`: tabs, categories and the slots in each. Slots a vehicle has no parts for are hidden, and so are categories and tabs that end up empty.
 - `Config.ProBuilds`: the kits. `'max'` fits the best part a vehicle has for that slot.
-- `Config.FeaturedUpgrade`: an upgrade the menu points players to until their vehicle has it (a tag on its tab, a dot on its category and a line at the bottom of the screen). `false` turns it off.
+- `Config.PadGlyphs`: `'xbox'` or `'playstation'`, the button names shown while a controller is in use.
 - `Config.PayAccounts`: the accounts customers pay from, in order. Default cash, then bank.
 - `Config.ExtraPrices`: prices of wheel colour, pearlescent, custom RGB, tire smoke, drift and bulletproof tires.
 - `Config.StatEffects`: how much each upgrade moves the bars on the vehicle card. This only changes what the card shows, not how the vehicle drives.
@@ -86,16 +86,18 @@ Config.FreeUpgradeToClass = { [18] = true, [19] = true } -- vehicle classes that
 
 ## Controls
 
-| Key | Action |
-|---|---|
-| W A S D / arrows | move, change option |
-| Q / E | previous / next tab or colour group |
-| Enter / Space | select, buy |
-| Backspace / Esc | back, exit |
-| R (hold) | rev the engine |
-| Tab | vehicle card page: name, stats, fitted parts |
-| Mouse drag / scroll | look around the vehicle, zoom |
-| Left Shift (hold, while driving) | nitrous boost, rebindable under Settings > Key Bindings > FiveM |
+| Keyboard / mouse | Controller | Action |
+|---|---|---|
+| W A S D / arrows | D-pad / left stick | move, change option |
+| Q / E | LB / RB | previous / next tab or colour group |
+| Enter / Space | A | select, buy |
+| Backspace / Esc | B | back, exit |
+| R (hold) | X (hold) | rev the engine |
+| Tab | Y | vehicle card page: name, stats, fitted parts |
+| Mouse drag / scroll | Right stick / LT RT | look around the vehicle, zoom |
+| Left Shift (hold, while driving) | L3, left stick press (hold, while driving) | nitrous boost, both rebindable under Settings > Key Bindings > FiveM |
+
+The prompts show the buttons of whichever was used last. `Config.PadGlyphs` switches the controller names between Xbox and PlayStation. Custom colours (the colour picker) need a mouse.
 
 `/freecustoms` opens the menu on the vehicle you are in, anywhere, with everything free. Admins only.
 
@@ -127,6 +129,26 @@ Nitrous state is in `LocalPlayer.state['customs:nitrous']` (not replicated) and 
 
 It is written whenever something changes and about ten times a second while the tank level is moving.
 
+## Mission hooks
+
+The menu has no objective text of its own. A mission that sends the player to the mod shop can add one:
+
+```lua
+exports[resource]:SetMenuObjective('Apply the ~nitrous boost~ mod', 'nitrous') -- line at the bottom, ~words~ highlighted
+exports[resource]:SetMenuObjective('Exit the mod shop') -- text only
+exports[resource]:SetMenuObjective() -- clear
+```
+
+The optional second argument is a slot (see `config_menu.lua`): its tab gets a tag, its category a dot. The local event `customs:purchased` fires after every purchase with a table of slot > value, so the mission can move on:
+
+```lua
+AddEventHandler('customs:purchased', function(changes)
+    if changes['nitrous'] and changes['nitrous'] ~= 'Default' then
+        exports[resource]:SetMenuObjective('Exit the mod shop')
+    end
+end)
+```
+
 ## Exports
 
 Client:
@@ -152,9 +174,11 @@ exports[resource]:SetVehicleNitrous(plate, kit) -- 'Default' removes it
 exports[resource]:GetVehicleNitrous(plate)
 ```
 
-## Fonts
+## Fonts and logos
 
 Text is set in GTA Art Deco (bundled in `html/fonts`). Headings use Bahnschrift Condensed, which ships with Windows 10 and 11. To use another heading font, change `--font-display` in `html/style.css`.
+
+The manufacturer mark on the vehicle card comes from `html/logos` and `html/makes.js`, the same files [vice_hud](https://github.com/Geckomacabre/GTA-VI-UI-and-HUD-for-FiveM) ships. Vehicles with no known make, which includes most addon vehicles, show no mark.
 
 ## Notes
 

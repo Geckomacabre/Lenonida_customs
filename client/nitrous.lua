@@ -136,6 +136,9 @@ if Config.UseNitrous then
 	RegisterCommand(COMMAND, function() held = true end, false)
 	RegisterCommand('-customsnitrous', function() held = false end, false)
 	RegisterKeyMapping(COMMAND, 'Nitrous boost', 'keyboard', Config.Nitrous.key)
+	if Config.Nitrous.padButton then -- ~! registers a second binding of the same command
+		RegisterKeyMapping('~!' .. COMMAND, 'Nitrous boost (controller)', 'PAD_DIGITALBUTTON', Config.Nitrous.padButton)
+	end
 
 	CreateThread(function()
 		RequestNamedPtfxAsset('core')
