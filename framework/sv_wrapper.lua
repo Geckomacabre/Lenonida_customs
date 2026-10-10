@@ -39,7 +39,8 @@ function GetPlayerFromId(src)
 			selfcore.data.job = selfcore.data.PlayerData.job
 		end
 		selfcore.data.getGroup = function(src)
-			return QBCore.Functions.HasPermission(src, 'god')
+			-- Qbox has no 'god': its admins hold the 'admin' ace or the group.admin principal
+			return QBCore.Functions.HasPermission(src, 'god') or QBCore.Functions.HasPermission(src, 'admin') or IsPlayerAceAllowed(src, 'group.admin')
 		end
 		selfcore.data.getMoney = function(value)
 			return selfcore.data.PlayerData.money['cash']

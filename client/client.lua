@@ -9,7 +9,7 @@ Citizen.CreateThread(function()
         SetBlipColour (blip, v.Blips.color)
         SetBlipAsShortRange(blip, true)
         BeginTextCommandSetBlipName('STRING')
-        AddTextComponentSubstringPlayerName("Mechanic Shop: "..k.."")
+        AddTextComponentSubstringPlayerName(v.Blips.label or "Mechanic Shop: "..k.."")
         EndTextCommandSetBlipName(blip)
     end
     TriggerServerEvent('renzu_customs:loaded')

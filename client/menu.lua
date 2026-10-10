@@ -508,6 +508,39 @@ local function statsPayload(view)
 	return stats
 end
 
+-- NITROUS FROM STREETKINGS
+-- With Config.NitrousSystem = 'streetkings', sk_streetkings is the server's nitrous: it keeps the
+-- tier by plate, takes the money, boosts and reports to the HUD. The menu only sells it, through
+-- the two exports sk_streetkings has for this (modules/tuning/tuning_c.lua).
+
+-- The Nitrous slot as the NUI wants it, and the tier the vehicle has now
+local function streetkingsNitrous(vehicle)
+	if GetResourceState('sk_streetkings') ~= 'started' then return nil end
+	local ok, shop = pcall(function() return exports.sk_streetkings:GetNitrousShop(vehicle) end)
+	if not ok or type(shop) ~= 'table' or type(shop.tiers) ~= 'table' then return nil end
+	local def = {
+		id = 'nitrous', label = slotLabel('nitrous'), kind = 'list', external = true,
+		options = { { value = 'Default', label = 'No Nitrous', price = 0, stock = true } },
+	}
+	for _, tier in ipairs(shop.tiers) do
+		def.options[#def.options + 1] = { value = tier.id, label = tier.label, price = tonumber(tier.price) or 0, stock = false }
+	end
+	return def, shop.current or 'Default'
+end
+
+local function buyStreetkingsNitrous(tier, cb)
+	local vehicle = session.vehicle
+	local ok, result = pcall(function() return exports.sk_streetkings:BuyNitrous(vehicle, tier ~= 'Default' and tier or nil) end)
+	if not session then return cb({ ok = false }) end
+	if not ok or type(result) ~= 'table' or not result.ok then
+		return cb({ ok = false, message = ok and type(result) == 'table' and result.reason or 'The purchase did not go through.' })
+	end
+	session.owned = copy(session.owned)
+	session.owned['nitrous'] = result.tier or 'Default'
+	TriggerEvent('customs:purchased', { nitrous = session.owned['nitrous'] })
+	cb({ ok = true, owned = session.owned, stats = statsPayload(session.owned) })
+end
+
 -- PRO BUILDS
 
 -- the parts of a kit this vehicle can take: slot > value
@@ -722,6 +755,15 @@ local function buildMenu(vehicle)
 	local built, tabs = {}, {}
 	local function slotFor(slot)
 		if built[slot] ~= nil then return built[slot] end
+		if slot == 'nitrous' and Config.NitrousSystem == 'streetkings' then
+			local def, current = streetkingsNitrous(vehicle)
+			built[slot] = def or false
+			if def then
+				session.slots[slot] = def
+				session.owned[slot] = current
+			end
+			return built[slot]
+		end
 		local cfg = Customs.SlotConfig(slot)
 		local def = cfg and allowed(cfg, session.admin) and buildSlot(vehicle, slot, cfg) or false
 		built[slot] = def
@@ -917,6 +959,7 @@ end
 
 RegisterNUICallback('Buy', function(data, cb)
 	if not session or not data.slot or not session.slots[data.slot] then return cb({ ok = false }) end
+	if session.slots[data.slot].external then return buyStreetkingsNitrous(data.value, cb) end
 	local changes = { [data.slot] = normalize(data.value) }
 	if PaintLinks[data.slot] then changes[PaintLinks[data.slot]] = 'off' end
 	purchase(changes, cb)

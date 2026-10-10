@@ -1,4 +1,6 @@
 -- Nitrous kits. Bought in the upgrade menu (Performance > Nitrous) and stored by plate on the server.
+-- With Config.NitrousSystem = 'streetkings' none of this runs: sk_streetkings boosts and writes the
+-- state bag below itself, and the menu only sells its tiers (see client/menu.lua).
 --
 -- HUD interface, for any resource that wants to draw a nitrous gauge:
 --   LocalPlayer.state['customs:nitrous'] (not replicated) and the local event 'customs:nitrous'
@@ -159,7 +161,7 @@ if Config.UseNitrous then
 end
 
 AddEventHandler('onResourceStop', function(resource)
-	if resource == GetCurrentResourceName() then
+	if resource == GetCurrentResourceName() and Config.UseNitrous then
 		LocalPlayer.state:set('customs:nitrous', { installed = false, level = 0.0, active = false, ready = false }, false)
 	end
 end)

@@ -3,7 +3,6 @@ lua54 'on'
 game 'gta5'
 ui_page 'html/index.html'
 
-shared_script '@renzu_shield/init.lua'
 server_scripts {
 	'@mysql-async/lib/MySQL.lua', -- uncomment if ghmatti and oxmysql
 	'config.lua',

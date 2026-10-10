@@ -49,8 +49,8 @@ Society accounts are found automatically on QBCore / Qbox: Renewed-Banking, then
 ## Installation
 
 1. Put the folder in your resources. Any folder name works.
-2. Import `customs_mysql8.0above.sql` (or `customs_mysql8.0below.sql` for MySQL older than 8.0).
-3. `fxmanifest.lua` loads `@renzu_shield/init.lua`. If you do not run renzu_shield, remove that line.
+2. Nothing to import: the `renzu_customs` table (the parts inventory of each shop) is created on first start. The `.sql` files are there if you would rather create it yourself.
+3. If you run renzu_shield, add `shared_script '@renzu_shield/init.lua'` back at the top of `fxmanifest.lua`.
 4. Set up `config.lua` (see below) and add `ensure <folder name>` to your server.cfg, after your framework and database.
 
 ## Configuration
@@ -60,15 +60,15 @@ Society accounts are found automatically on QBCore / Qbox: Renewed-Banking, then
 ```lua
 Config.framework = 'auto' -- "auto", "ESX", "QBCORE" (Qbox: "auto" or "QBCORE")
 Config.Mysql = 'mysql-async' -- "mysql-async", "oxmysql", "ghmattisql"
-Config.JobPermissionAll = true -- true: only the shop's job can use the upgrade menu, and the shop account pays
-                               -- false: anyone can use it and pays with their own money
+Config.JobPermissionAll = false -- false: anyone can use the upgrade menu and pays with their own money
+                                -- true: only the shop's job can use it, and the shop account pays
 Config.OwnedVehiclesOnly = false -- only vehicles in the owned vehicles table can be upgraded
 Config.RepairCost = 1500
 Config.EnableDiscounts = false -- job discounts, global (Config.JobDiscounts) or per upgrade type
 Config.FreeUpgradeToClass = { [18] = true, [19] = true } -- vehicle classes that upgrade for free
 ```
 
-- `Config.Customs`: the shops. Each has a job, a radius, upgrade spots (`mod`), and the stock room, paint room and parts inventory positions.
+- `Config.Customs`: the shops. Each has a radius and upgrade spots (`mod`). `job` and the stock room, paint room and parts inventory positions are optional: a shop without them is a plain public mod shop. The defaults are the five Los Santos Customs (public) and Benny's (run by the `mechanic` job).
 - `Config.VehicleMod`: every upgrade type with its cost, `percent_cost`, job grades and discounts. `multicostperlvl = true` charges the cost times the level.
 - `Config.VehicleValuetoFormula`: price upgrades from the value of the vehicle instead of the fixed cost.
 
@@ -81,7 +81,8 @@ Config.FreeUpgradeToClass = { [18] = true, [19] = true } -- vehicle classes that
 - `Config.PayAccounts`: the accounts customers pay from, in order. Default cash, then bank.
 - `Config.ExtraPrices`: prices of wheel colour, pearlescent, custom RGB, tire smoke, drift and bulletproof tires.
 - `Config.StatEffects`: how much each upgrade moves the bars on the vehicle card. This only changes what the card shows, not how the vehicle drives.
-- `Config.Nitrous` and `Config.VehicleMod['nitrous']`: boost key, refill behaviour, and the kits (`power`, `duration`, `recharge`, `value`).
+- `Config.NitrousSystem`: `'builtin'`, `'streetkings'` or `'auto'` (see [Nitrous from sk_streetkings](#nitrous-from-sk_streetkings)).
+- `Config.Nitrous` and `Config.VehicleMod['nitrous']`: boost key, refill behaviour, and the built-in kits (`power`, `duration`, `recharge`, `value`).
 - `Config.MenuDepthOfField`: blur the background behind the vehicle.
 
 ## Controls
@@ -128,6 +129,12 @@ Nitrous state is in `LocalPlayer.state['customs:nitrous']` (not replicated) and 
 ```
 
 It is written whenever something changes and about ten times a second while the tank level is moving.
+
+## Nitrous from sk_streetkings
+
+If the server runs sk_streetkings, its nitrous is used instead of the built-in one (`Config.NitrousSystem = 'auto'`): the Nitrous category sells the StreetKings tiers at StreetKings' prices, and StreetKings does the boosting, refilling and storing. Nothing nitrous-related in this resource runs, and Pro Builds skip their nitrous part.
+
+It needs two exports in sk_streetkings (`modules/tuning/tuning_c.lua`): `GetNitrousShop(vehicle)` returning `{ current = tier or nil, tiers = { { id, label, price }, ... } }`, and `BuyNitrous(vehicle, tier)` returning `{ ok, reason, tier }`. For the HUD, sk_streetkings writes the same `customs:nitrous` state bag described above, with `key` (a control id) in place of `command`.
 
 ## Mission hooks
 

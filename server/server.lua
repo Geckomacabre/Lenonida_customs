@@ -7,8 +7,10 @@ local inshop = {} -- player > { net, props, admin } of the vehicle they have in 
 Citizen.CreateThreadNow(function()
     Wait(1000)
     VehicleNames()
+    -- parts inventory of each shop. Created here, so there is no SQL file to import first
+    CustomsSQL(Config.Mysql,'execute','CREATE TABLE IF NOT EXISTS `renzu_customs` (`shop` VARCHAR(64) NOT NULL, `inventory` LONGTEXT NULL, PRIMARY KEY (`shop`))', {})
     for k,v in pairs(Config.Customs) do
-        CustomsSQL(Config.Mysql,'execute','INSERT IGNORE  INTO renzu_customs (shop) VALUES (@shop)', {
+        CustomsSQL(Config.Mysql,'execute',"INSERT IGNORE  INTO renzu_customs (shop, inventory) VALUES (@shop, '[]')", {
             ['@shop']   = k,
         })
     end
@@ -270,7 +272,7 @@ RegisterServerCallBack_('renzu_customs:pay', function (source, cb, data)
             if not ChargePlayer(xPlayer,total) then
                 fail('Not enough money, $'..total..' required.') return
             end
-            if shop and not Config.JobPermissionAll then
+            if shop and Config.Customs[shop].job and not Config.JobPermissionAll then
                 Society(Config.Customs[shop].job,total,'add',src)
             end
         end

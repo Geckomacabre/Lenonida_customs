@@ -9,7 +9,7 @@ AddEventHandler('renzu_customs:ingarage', function(garage,garage_id)
         local stats_show = nil
         while insidegarage do
             for k,v in pairs(Config.Customs) do
-                local distance = #(GetEntityCoords(PlayerPedId()) - vector3(v.paintmenu.coord.x,v.paintmenu.coord.y,v.paintmenu.coord.z))
+                local distance = v.paintmenu and #(GetEntityCoords(PlayerPedId()) - vector3(v.paintmenu.coord.x,v.paintmenu.coord.y,v.paintmenu.coord.z)) or 9999.0 -- public shops have no rooms
                 if Config.InteractiveFeature['paintmenu'] and distance < 30 and ShopPermmision(currentprivate,'paintmenu') and Config.showmarker then
                     DrawMarkerInput(vector3(v.paintmenu.coord.x,v.paintmenu.coord.y,v.paintmenu.coord.z),'Spray Paint Menu','renzu_customs:openpaintmenu',false,'spray_paint')
                 end
@@ -60,7 +60,7 @@ AddEventHandler('renzu_customs:ingarage', function(garage,garage_id)
                         end
                     end
                 end
-                local distance = #(GetEntityCoords(PlayerPedId()) - vector3(v.stockroom.coord.x,v.stockroom.coord.y,v.stockroom.coord.z))
+                local distance = v.stockroom and #(GetEntityCoords(PlayerPedId()) - vector3(v.stockroom.coord.x,v.stockroom.coord.y,v.stockroom.coord.z)) or 9999.0
                 if Config.InteractiveFeature['stockroom'] and distance < 30 and ShopPermmision(currentprivate,'stockroom') and Config.showmarker then
                     DrawMarkerInput(vector3(v.stockroom.coord.x,v.stockroom.coord.y,v.stockroom.coord.z),'Stock Room','renzu_customs:openstockroom',false,'stock_inventory',k)
                 end
@@ -108,7 +108,7 @@ AddEventHandler('renzu_customs:ingarage', function(garage,garage_id)
                 stats_show = nil
             end
             local inv = garage.garage_inventory
-            local inventorydis = #(GetEntityCoords(PlayerPedId()) - vector3(inv.coord.x,inv.coord.y,inv.coord.z))
+            local inventorydis = inv and #(GetEntityCoords(PlayerPedId()) - vector3(inv.coord.x,inv.coord.y,inv.coord.z)) or 9999.0
             if Config.InteractiveFeature['garage_inventory'] and inventorydis < 10 and not carrymode and not carrymod and ShopPermmision(currentprivate,'garage_inventory') and Config.showmarker then
                 DrawMarkerInput(vector3(inv.coord.x,inv.coord.y,inv.coord.z),'Parts Inventory','renzu_customs:openinventory',false,'parts_inventory',currentprivate)
             end

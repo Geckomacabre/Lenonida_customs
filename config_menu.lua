@@ -2,8 +2,12 @@
 
 -- Shop title shown top-left of the menu. Shops not listed here show their Config.Customs id.
 Config.ShopLabels = {
+	['LSC Vinewood'] = 'Los Santos Customs',
+	['LSC Airport'] = 'Los Santos Customs',
+	['LSC East'] = 'Los Santos Customs',
+	['LSC Sandy Shores'] = 'Los Santos Customs',
+	['LSC Paleto'] = 'Los Santos Customs',
 	['Bennys'] = "Benny's Original Motor Works",
-	['Custom Garage'] = 'Tuner Auto Shop',
 }
 
 -- Keyboard controls inside the menu (KeyboardEvent.code values, shown in the prompt circles)
@@ -39,7 +43,16 @@ Config.ExtraPrices = {
 -- duration = seconds of boost in a full tank
 -- recharge = seconds to refill an empty tank
 -- value    = Cost
-Config.UseNitrous = true
+-- Where nitrous comes from:
+--   'builtin'      the kits below, boosted and stored by this resource
+--   'streetkings'  sk_streetkings' nitrous: the Nitrous category sells its tiers, and it does the
+--                  boosting, refilling, storing and HUD reporting itself
+--   'auto'         'streetkings' when sk_streetkings is installed, otherwise 'builtin'
+Config.NitrousSystem = 'auto'
+if Config.NitrousSystem == 'auto' then
+	Config.NitrousSystem = GetResourceState('sk_streetkings') ~= 'missing' and 'streetkings' or 'builtin'
+end
+Config.UseNitrous = Config.NitrousSystem == 'builtin'
 Config.Nitrous = {
 	key = 'LSHIFT', -- default key, players can rebind it in Settings > Key Bindings > FiveM
 	padButton = 'L3_INDEX', -- default controller button (left stick press, the game's own boost button), false = none
@@ -190,5 +203,9 @@ Config.StatEffects = {
 		Street = { acceleration = 0.3 },
 		Sport = { acceleration = 0.5, speed = 0.1 },
 		Race = { acceleration = 0.8, speed = 0.2 },
+		-- sk_streetkings tiers
+		street = { acceleration = 0.3 },
+		sport = { acceleration = 0.5, speed = 0.1 },
+		race = { acceleration = 0.8, speed = 0.2 },
 	},
 }

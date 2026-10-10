@@ -12,7 +12,7 @@ Config.DoNotShowEmptyMods = false -- hide mod menu if no available mod for curre
 --JOB
 -- Config.job = 'mechanic' -- Default job (job permission if job is not indicated here Config.Customs) -- OBSOLETE , Configure jobs here Config.Customs
 Config.DefaultJobGradePermmission = 0 -- default jobgrade in each job shop (ignored if its indicated at Config.VehicleMod)
-Config.JobPermissionAll = true -- if this is true only mechanics can access even the upgrade menu (Main Menu)
+Config.JobPermissionAll = false -- if this is true only mechanics can access even the upgrade menu (Main Menu)
 --JOB
 Config.InteractiveFeature = { -- Enable Disable All Extra Features like: Inventory, Stock Room, Paint Room
 	['garage_inventory'] = true,
@@ -66,10 +66,58 @@ Config.RepairCost = 1500 -- repair cost
 -- BLIPS = BLIP info sprite , color and scale.
 -- grade = minimum job grade to access the feature/ menu/ options
 -- Can a single job can owned both/multiple shop? = yes
+-- job, stockroom, paintmenu and garage_inventory are optional: a shop without them is a plain public mod shop
+-- Blips.label = blip name (without it the blip is called "Mechanic Shop: <shop id>")
 Config.Customs = { -- Multiple Shop Start
 
+	-- The five Los Santos Customs. Public: no job, no mechanic rooms, just the upgrade spot.
+	['LSC Vinewood'] = {
+		radius = 30,
+		shopcoord = vector4(-338.65,-134.87,38.88,0.0),
+		mod = {
+			{coord = vector4(-338.65,-134.87,38.88,0.0), taken = false},
+		},
+		Blips = {sprite = 72, color = 3, scale = 0.8, label = 'Los Santos Customs - Vinewood'},
+	},
+
+	['LSC Airport'] = {
+		radius = 30,
+		shopcoord = vector4(-1151.15,-2003.59,13.32,0.0),
+		mod = {
+			{coord = vector4(-1151.15,-2003.59,13.32,0.0), taken = false},
+		},
+		Blips = {sprite = 72, color = 3, scale = 0.8, label = 'Los Santos Customs - Airport'},
+	},
+
+	['LSC East'] = {
+		radius = 30,
+		shopcoord = vector4(729.61,-1080.79,22.38,0.0),
+		mod = {
+			{coord = vector4(729.61,-1080.79,22.38,0.0), taken = false},
+		},
+		Blips = {sprite = 72, color = 3, scale = 0.8, label = 'Los Santos Customs - East'},
+	},
+
+	['LSC Sandy Shores'] = {
+		radius = 30,
+		shopcoord = vector4(1180.0,2641.84,38.61,0.0),
+		mod = {
+			{coord = vector4(1180.0,2641.84,38.61,0.0), taken = false},
+		},
+		Blips = {sprite = 72, color = 3, scale = 0.8, label = 'Los Santos Customs - Sandy Shores'},
+	},
+
+	['LSC Paleto'] = {
+		radius = 30,
+		shopcoord = vector4(108.0,6621.94,32.06,0.0),
+		mod = {
+			{coord = vector4(108.0,6621.94,32.06,0.0), taken = false},
+		},
+		Blips = {sprite = 72, color = 3, scale = 0.8, label = 'Los Santos Customs - Paleto'},
+	},
+
     ['Bennys'] = { -- Shop id -- Sample bennys (IPL coordinates) Change this to your liking (CHANGE COORDINATES IF CUSTOM BENNYS MAP)
-		job = 'mechanic', -- job name permmision for this shop
+		job = 'mechanic', -- job that runs this shop: it gets the rooms below, free repairs, and the shop's takings
 		min_grade = 0, -- min grade to access the whole shop feature
 		radius = 30, -- radius for whole shop
 		stockroom = {coord = vector4(-227.70811462402,-1322.9874267578,30.890409469604,90.902221679688), grade = 0}, -- vector 4 why the F is this vector4, x,y,z,w (heading)
@@ -80,22 +128,7 @@ Config.Customs = { -- Multiple Shop Start
 			{coord = vector4(-224.20236206055,-1329.8156738281,30.21583366394,87.278968811035), taken = false},
 			{coord = vector4(-213.22569274902,-1331.546875,30.215799331665,356.6969909668), taken = false},
 		},
-		Blips = {sprite = 446, color = 68, scale = 0.8},
-    },
-
-	['Custom Garage'] = { -- Shop id -- Custom Map Tuner Garage (2372 Build only, canary and release) IPL and Int https://forum.cfx.re/t/free-mlo-tuner-auto-shop/4247145
-		job = 'police', -- job name permmision for this shop
-		min_grade = 0, -- min grade to access the whole shop feature
-		radius = 30, -- radius for whole shop
-		stockroom = {coord = vector4(818.46160888672,-969.87396240234,26.10876083374,269.27597045898), grade = 0},
-		paintmenu = {coord = vector3(809.76037597656,-959.36596679688,26.10876083374), grade = 0},
-		garage_inventory = {coord = vector4(807.99078369141,-979.44848632812,26.308683395386,165.16065979004), grade = 0},
-		shopcoord = vector4(818.54309082031,-953.44543457031,26.108730316162,305.57107543945),
-		mod = {
-			{coord = vector4(823.82153320312,-944.92102050781,25.440004348755,94.50008392334), taken = false},
-			{coord = vector4(830.01727294922,-953.10614013672,25.440238952637,97.936683654785), taken = false},
-		},
-		Blips = {sprite = 446, color = 68, scale = 0.8},
+		Blips = {sprite = 446, color = 68, scale = 0.8, label = "Benny's Motorworks"},
     },
 
 }
