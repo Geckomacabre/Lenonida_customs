@@ -202,6 +202,7 @@
 
     function purchased(r) {
         D.owned = r.owned;
+        if (Array.isArray(r.kits)) D.kits = r.kits;
         D.stats = r.stats;
         shown = r.stats;
         const view = top();

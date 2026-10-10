@@ -567,13 +567,26 @@ local function resolveKit(kit)
 	return out, count
 end
 
+-- what the kit costs on this vehicle right now: its price, or less when the parts it would fit cost less
+local function kitPrice(kit, parts)
+	local view = copy(session.owned)
+	for slot, value in pairs(parts) do
+		view[slot] = value
+	end
+	view['kit'] = kit.id
+	for _, item in ipairs(Customs.Cart(session.owned, view, session.ctx) or {}) do
+		if item.slot == 'kit' then return item.price end
+	end
+	return Customs.KitPrice(kit, session.ctx)
+end
+
 local function buildKits()
 	local kits = {}
 	for _, kit in ipairs(Config.ProBuilds or {}) do
 		local parts, count = resolveKit(kit)
 		if count > 0 then
 			session.kits[kit.id] = parts
-			kits[#kits + 1] = { id = kit.id, label = kit.label, price = Customs.KitPrice(kit, session.ctx), parts = count }
+			kits[#kits + 1] = { id = kit.id, label = kit.label, price = kitPrice(kit, parts), parts = count }
 		end
 	end
 	return kits
@@ -953,7 +966,8 @@ local function purchase(changes, cb)
 		if was['custom_turbo'] ~= session.owned['custom_turbo'] then SetVehicleTurbo(vehicle, session.owned['custom_turbo']) end
 		if was['custom_tires'] ~= session.owned['custom_tires'] then SetVehicleTireType(vehicle, session.owned['custom_tires']) end
 		TriggerEvent('customs:purchased', changes) -- slot > value of what was just bought
-		cb({ ok = true, paid = result.total, owned = session.owned, stats = statsPayload(session.owned) })
+		-- kits are sent again: buying a part can lower what a kit containing it costs
+		cb({ ok = true, paid = result.total, owned = session.owned, stats = statsPayload(session.owned), kits = buildKits() })
 	end, { prop = props, shop = session.shop, class = GetVehicleClass(vehicle) })
 end
 

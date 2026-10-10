@@ -267,7 +267,16 @@ function Customs.Cart(old, new, ctx)
 		local kit = Customs.Kit(new['kit'])
 		if not kit then return nil end
 		covered = kit.slots
-		local price = Customs.KitPrice(kit, ctx)
+		-- a kit never costs more than the parts it actually changes on this vehicle
+		local parts = 0
+		for slot in pairs(covered) do
+			if new[slot] ~= nil and old[slot] ~= new[slot] then
+				local part = Customs.Price(slot, new[slot], ctx)
+				if not part then return nil end
+				parts = parts + part
+			end
+		end
+		local price = math.min(Customs.KitPrice(kit, ctx), parts)
 		items[#items + 1] = { slot = 'kit', value = new['kit'], price = price }
 		total = total + price
 	end

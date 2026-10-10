@@ -143,13 +143,15 @@ Config.Menu = {
 }
 
 -- PRO BUILDS (Full Kits)
--- One purchase that fits a whole set of parts. price is fixed and covers every slot listed.
+-- One purchase that fits a whole set of parts. price covers every slot listed and is set about
+-- 10% under what those parts cost one by one on a typical car. A vehicle that takes fewer of the
+-- parts (or already has some) pays the cost of the parts it actually gets instead, never more.
 -- slots: 'max' = best part the vehicle has for that slot, a number = that option (0 is the first upgrade),
 -- anything else is the option value itself (true for toggles, a list name for custom upgrades).
 -- Slots a vehicle does not have (or that are disabled in config) are skipped.
 Config.ProBuilds = {
 	{
-		id = 'street', label = 'Custom Street Racing Build', price = 95000,
+		id = 'street', label = 'Custom Street Racing Build', price = 250000,
 		slots = {
 			['mod:11'] = 'max', ['mod:12'] = 'max', ['mod:13'] = 'max', ['mod:15'] = 2, ['turbo'] = true,
 			['mod:0'] = 'max', ['mod:1'] = 'max', ['mod:2'] = 'max', ['mod:3'] = 'max', ['mod:4'] = 'max', ['mod:7'] = 'max',
@@ -157,7 +159,7 @@ Config.ProBuilds = {
 		},
 	},
 	{
-		id = 'drift', label = 'Custom Drift Build', price = 80000,
+		id = 'drift', label = 'Custom Drift Build', price = 205000,
 		slots = {
 			['mod:11'] = 'max', ['mod:13'] = 'max', ['mod:15'] = 'max', ['turbo'] = true, ['drift'] = true,
 			['mod:0'] = 0, ['mod:1'] = 0, ['mod:3'] = 0, ['mod:4'] = 0,
@@ -165,7 +167,7 @@ Config.ProBuilds = {
 		},
 	},
 	{
-		id = 'drag', label = 'Custom Drag Build', price = 140000,
+		id = 'drag', label = 'Custom Drag Build', price = 325000,
 		slots = {
 			['mod:11'] = 'max', ['mod:13'] = 'max', ['mod:12'] = 1, ['turbo'] = true,
 			['mod:4'] = 'max', ['mod:7'] = 'max',
@@ -173,7 +175,7 @@ Config.ProBuilds = {
 		},
 	},
 	{
-		id = 'armored', label = 'Custom Armored Build', price = 110000,
+		id = 'armored', label = 'Custom Armored Build', price = 155000,
 		slots = {
 			['mod:16'] = 'max', ['mod:12'] = 'max', ['mod:11'] = 1, ['bulletproof'] = true, ['window'] = 1,
 		},

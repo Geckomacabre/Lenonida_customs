@@ -76,7 +76,7 @@ Config.FreeUpgradeToClass = { [18] = true, [19] = true } -- vehicle classes that
 
 - `Config.ShopLabels`: the title shown top left, per shop.
 - `Config.Menu`: tabs, categories and the slots in each. Slots a vehicle has no parts for are hidden, and so are categories and tabs that end up empty.
-- `Config.ProBuilds`: the kits. `'max'` fits the best part a vehicle has for that slot.
+- `Config.ProBuilds`: the kits. `'max'` fits the best part a vehicle has for that slot. `price` is what the whole kit costs; a vehicle that takes fewer of its parts, or already has some, pays the cost of the parts it actually gets instead, never more.
 - `Config.PadGlyphs`: `'xbox'` or `'playstation'`, the button names shown while a controller is in use.
 - `Config.PayAccounts`: the accounts customers pay from, in order. Default cash, then bank.
 - `Config.ExtraPrices`: prices of wheel colour, pearlescent, chameleon and custom RGB paint, tire smoke, drift and bulletproof tires.
