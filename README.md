@@ -79,7 +79,9 @@ Config.FreeUpgradeToClass = { [18] = true, [19] = true } -- vehicle classes that
 - `Config.ProBuilds`: the kits. `'max'` fits the best part a vehicle has for that slot.
 - `Config.PadGlyphs`: `'xbox'` or `'playstation'`, the button names shown while a controller is in use.
 - `Config.PayAccounts`: the accounts customers pay from, in order. Default cash, then bank.
-- `Config.ExtraPrices`: prices of wheel colour, pearlescent, custom RGB, tire smoke, drift and bulletproof tires.
+- `Config.ExtraPrices`: prices of wheel colour, pearlescent, chameleon and custom RGB paint, tire smoke, drift and bulletproof tires.
+
+The default prices are tiered: small items (horn, plates, tint, extras) $500 to $2,500, body and interior parts $2,000 to $6,000, a respray $3,500 to $6,000 with chameleon and custom colours above that, wheels $4,000 to $6,000, and performance upgrades $15,000 per level.
 - `Config.StatEffects`: how much each upgrade moves the bars on the vehicle card. This only changes what the card shows, not how the vehicle drives.
 - `Config.NitrousSystem`: `'builtin'`, `'streetkings'` or `'auto'` (see [Nitrous from sk_streetkings](#nitrous-from-sk_streetkings)).
 - `Config.Nitrous` and `Config.VehicleMod['nitrous']`: boost key, refill behaviour, and the built-in kits (`power`, `duration`, `recharge`, `value`).

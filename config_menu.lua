@@ -29,13 +29,14 @@ Config.PayAccounts = { 'cash', 'bank' }
 
 -- Prices for options that have no entry of their own in Config.VehicleMod
 Config.ExtraPrices = {
-	wheelcolor = 2500,
-	pearl = 5000,
-	rgb = 20000, -- custom RGB respray (primary or secondary)
-	tyresmoke = 5000,
-	customtire = 5000, -- branded tire sidewalls
-	drift = 15000, -- drift tires
-	bulletproof = 25000, -- bulletproof tires
+	wheelcolor = 1500,
+	pearl = 3000,
+	chameleon = 15000, -- a chameleon primary colour, in place of the normal respray cost
+	rgb = 12000, -- custom RGB respray (primary or secondary)
+	tyresmoke = 2000,
+	customtire = 1500, -- branded tire sidewalls
+	drift = 8000, -- drift tires
+	bulletproof = 20000, -- bulletproof tires
 }
 
 -- NITROUS
@@ -81,9 +82,9 @@ if Config.UseNitrous then
 		type = 'Nitrous',
 		list = {
 			Default = {}, -- needed for uninstall
-			Street = {label = 'Street 50 Shot', power = 1.6, duration = 4.0, recharge = 22.0, value = 20000},
-			Sport = {label = 'Sport 100 Shot', power = 2.2, duration = 5.5, recharge = 18.0, value = 45000},
-			Race = {label = 'Race 150 Shot', power = 3.0, duration = 7.0, recharge = 14.0, value = 90000},
+			Street = {label = 'Street 50 Shot', power = 1.6, duration = 4.0, recharge = 22.0, value = 10000},
+			Sport = {label = 'Sport 100 Shot', power = 2.2, duration = 5.5, recharge = 18.0, value = 17500},
+			Race = {label = 'Race 150 Shot', power = 3.0, duration = 7.0, recharge = 14.0, value = 25000},
 		}
 	}
 end

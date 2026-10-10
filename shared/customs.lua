@@ -161,6 +161,17 @@ local function modCost(cfg, ctx)
 	return cost
 end
 
+local chameleon = nil -- paint indexes of the chameleon finishes
+local function isChameleon(index)
+	if not chameleon then
+		chameleon = {}
+		for _, paint in pairs(Config.Chameleon or {}) do
+			chameleon[paint] = true
+		end
+	end
+	return chameleon[index] == true
+end
+
 local function isRgb(value)
 	return type(value) == 'string' and Customs.ParseRgb(value) ~= nil
 end
@@ -180,7 +191,10 @@ function Customs.BasePrice(slot, value, ctx)
 	elseif slot == 'wheels' then
 		if value == 'stock' then return 0 end
 		return type(value) == 'string' and value:match('^%d+:%d+$') and modCost(cfg, ctx) or nil
-	elseif slot == 'paint1' or slot == 'paint2' or slot == 'plate' then
+	elseif slot == 'paint1' then
+		if type(value) ~= 'number' then return nil end
+		return isChameleon(value) and extra.chameleon or modCost(cfg, ctx)
+	elseif slot == 'paint2' or slot == 'plate' then
 		return type(value) == 'number' and modCost(cfg, ctx) or nil
 	elseif slot == 'pearl' then
 		return type(value) == 'number' and extra.pearl or nil
